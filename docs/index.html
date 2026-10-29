@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>transxact-kotlin — Transxact for Kotlin</title>
+<meta name="description" content="Kotlin/JVM client for taking M-PAiSA and MyCash payments with Transxact hosted Checkout Sessions. Server-side, with verified webhooks.">
+<meta name="theme-color" content="#0c0a09">
+<meta property="og:title" content="transxact-kotlin — Transxact for Kotlin">
+<meta property="Kotlin SDK for Transxact hosted Checkout. M-PAiSA and MyCash, in FJD.">
+<meta property="og:image" content="assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/* Shared with transxactfj.github.io/transxact-react / transxact-flutter — keep the two in step. */
+:root{
+  --lime:#84cc16;--lime-hover:#65a30d;--lime-deep:#4d7c0f;--lime-mist:#f7fee7;--lime-glow:#bef264;
+  --forest:#1a2e05;--stone-950:#0c0a09;--stone-900:#1c1917;--stone-800:#292524;
+  --stone-700:#44403c;--stone-600:#57534e;--stone-500:#78716c;--stone-400:#a8a29e;--stone-300:#d6d3d1;
+  --stone-200:#e7e5e4;--stone-100:#f5f5f4;--stone-50:#fafaf9;--white:#fff;
+  --head:"Plus Jakarta Sans",system-ui,sans-serif;--body:Inter,system-ui,sans-serif;
+  --mono:ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{margin:0;background:var(--white);color:var(--stone-950);font:400 16px/26px var(--body);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--head);margin:0;letter-spacing:-.02em}
+p{margin:0}
+a{color:var(--lime-deep)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
+code{font:500 .9em var(--mono);background:var(--stone-100);padding:1px 6px;border-radius:4px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+.eyebrow{font:700 12px/16px var(--head);letter-spacing:.14em;text-transform:uppercase;color:var(--lime-deep);margin-bottom:14px}
+.dark .eyebrow{color:var(--lime)}
+
+/* nav */
+nav{position:sticky;top:0;z-index:10;background:var(--stone-950)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+nav img{height:28px;display:block}
+nav ul{display:flex;gap:22px;list-style:none;margin:0;padding:0;align-items:center}
+nav a{color:var(--stone-400);font:600 13px var(--head);text-decoration:none}
+nav a:hover{color:var(--lime)}
+
+/* buttons: the 15° slant is the brand's one graphic device */
+.btn{display:inline-block;transform:skewX(-15deg);background:var(--lime);color:var(--stone-950);font:600 15px var(--body);padding:12px 30px;text-decoration:none;border:0;cursor:pointer;transition:background .15s}
+.btn:hover{background:var(--lime-hover)}
+.btn span{display:inline-block;transform:skewX(15deg)}
+.btn.ghost{background:transparent;color:var(--white);box-shadow:inset 0 0 0 1.5px var(--stone-600)}
+.btn.ghost:hover{background:var(--stone-900);color:var(--lime)}
+.tag{display:inline-block;transform:skewX(-15deg);background:var(--stone-950);color:var(--lime);font:700 12px var(--head);padding:6px 14px}
+.tag span{display:inline-block;transform:skewX(15deg)}
+.dark .tag{background:var(--forest)}
+
+/* hero */
+.hero{position:relative;overflow:hidden;background:var(--stone-950);color:var(--white);padding:96px 0 104px}
+.hero .motif{position:absolute;right:-220px;top:20px;width:900px;fill:var(--forest);pointer-events:none}
+.hero .wrap{position:relative}
+.hero h1{font:800 clamp(44px,8vw,88px)/1.02 var(--head);letter-spacing:-.03em;margin:18px 0 22px}
+.hl{background:linear-gradient(transparent 62%,var(--lime) 62%);color:var(--white)}
+.hero .lead{font-size:19px;line-height:30px;color:var(--stone-300);max-width:600px}
+.cta{display:flex;gap:20px;flex-wrap:wrap;margin-top:34px}
+.install{margin-top:44px;display:flex;align-items:center;gap:12px;background:var(--stone-900);border:1px solid var(--stone-800);border-radius:10px;padding:10px 10px 10px 18px;width:fit-content;max-width:100%}
+.install code{background:none;color:var(--lime);font-size:14px;padding:0;overflow-x:auto;white-space:nowrap}
+.copy{border:0;background:var(--stone-800);color:var(--white);font:600 12px var(--body);padding:8px 14px;border-radius:6px;cursor:pointer}
+.copy:hover{background:var(--stone-700)}
+
+/* sections */
+section{padding:88px 0}
+section.alt{background:var(--stone-50);border-block:1px solid var(--stone-200)}
+h2{font:800 clamp(30px,4.5vw,40px)/1.15 var(--head);margin-bottom:14px}
+.sub{color:var(--stone-700);font-size:18px;line-height:28px;max-width:680px;margin-bottom:44px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.card{background:var(--white);border:1px solid var(--stone-200);border-radius:14px;padding:26px}
+.card .n{font:800 13px var(--head);color:var(--lime-deep);letter-spacing:.1em;margin-bottom:10px}
+.card h3{font:700 19px/26px var(--head);margin-bottom:8px}
+.card p{color:var(--stone-700);font-size:15px;line-height:24px}
+
+/* code */
+.steps{display:grid;gap:34px}
+.step{display:grid;grid-template-columns:240px minmax(0,1fr);gap:34px;align-items:start}
+.step h3{font:700 20px/28px var(--head);margin-bottom:8px}
+.step p{color:var(--stone-700);font-size:15px;line-height:24px}
+.step p+p{margin-top:10px}
+pre{margin:0;background:var(--stone-950);color:var(--stone-200);padding:20px 22px;border-radius:12px;overflow-x:auto;font:500 13px/21px var(--mono)}
+pre code{background:none;padding:0;font:inherit;border-radius:0}
+/* Same three-colour highlighting as the React page: keywords, strings, comments. */
+pre .k,pre .token.keyword,pre .token.boolean{color:var(--lime)}
+pre .c,pre .token.comment{color:var(--stone-400)}
+pre .s,pre .token.string,pre .token.attr-value,pre .token.template-string{color:var(--lime-glow)}
+
+/* rules */
+.rules{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.rule{display:flex;gap:16px;background:var(--lime-mist);border-radius:12px;padding:20px 22px}
+.rule i{flex:none;width:12px;height:36px;background:var(--lime);transform:skewX(-15deg);margin-top:3px}
+.rule h3{font:700 16px/22px var(--head);color:var(--forest);margin-bottom:4px}
+.rule p{color:#365314;font-size:14px;line-height:22px}
+.rule code{background:rgba(77,124,15,.1)}
+
+/* flow */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:8px}
+.flow div{padding:18px 22px;background:var(--stone-900);color:var(--stone-300);font-size:14px;line-height:22px;transform:skewX(-15deg);margin-right:4px}
+.flow div:nth-child(odd){background:var(--stone-950)}
+.flow div>*{transform:skewX(15deg)}
+.flow b{display:block;font:700 14px var(--head);color:var(--lime);margin-bottom:2px}
+.flow-wrap{background:var(--stone-950);border-radius:14px;padding:30px 30px 30px 40px;overflow:hidden}
+
+/* api */
+.api{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.api .wide{grid-column:1/-1}
+.api .card h3{font:600 17px/24px var(--mono);letter-spacing:0;margin-bottom:8px;overflow-wrap:anywhere}
+.api .card>p{margin-bottom:14px}
+table{width:100%;border-collapse:collapse;font-size:14px;line-height:21px}
+th{text-align:left;font:700 11px/16px var(--head);letter-spacing:.1em;text-transform:uppercase;color:var(--stone-600);padding:0 12px 8px 0}
+td{padding:10px 12px 10px 0;border-top:1px solid var(--stone-200);vertical-align:top;color:var(--stone-700)}
+td code{font-size:12.5px;white-space:nowrap}
+.states{margin-top:14px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--stone-600)}
+.pill{font:600 12px/20px var(--mono);padding:2px 9px;border-radius:99px;background:var(--stone-100);color:var(--stone-700)}
+.pill.ok{background:var(--lime-mist);color:var(--lime-deep)}
+.pill.warn{background:#fef3c7;color:#92400e}
+.pill.bad{background:#ffe4e6;color:#9f1239}
+.more{margin-top:28px;color:var(--stone-700);font-size:15px}
+
+/* footer */
+footer{background:var(--stone-950);color:var(--stone-400);padding:56px 0 44px;font-size:14px}
+footer .wrap{display:flex;gap:30px;justify-content:space-between;flex-wrap:wrap;align-items:flex-start}
+footer img{height:26px;display:block;margin-bottom:12px}
+footer ul{list-style:none;margin:0;padding:0;display:flex;gap:22px;flex-wrap:wrap}
+footer a{color:var(--stone-300);text-decoration:none;font-weight:500}
+footer a:hover{color:var(--lime)}
+.legal{width:100%;border-top:1px solid var(--stone-800);padding-top:22px;margin-top:6px;font-size:12px}
+
+@media (max-width:860px){
+  .grid3,.rules,.api{grid-template-columns:minmax(0,1fr)}
+  .step{grid-template-columns:minmax(0,1fr);gap:14px}
+  .flow{grid-template-columns:1fr;gap:6px}
+  .flow div{transform:none;margin:0;border-radius:8px}
+  .flow div>*{transform:none}
+  nav ul li.hide-sm{display:none}
+  .hero{padding:64px 0 72px}
+  .hero .motif{right:-420px;opacity:.7}
+  section{padding:64px 0}
+  td code{white-space:normal}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a href="#top" aria-label="Transxact"><img src="assets/logo-reverse.svg" alt="Transxact"></a>
+    <ul>
+      <li class="hide-sm"><a href="#how">How it works</a></li>
+      <li class="hide-sm"><a href="#quickstart">Quickstart</a></li>
+      <li class="hide-sm"><a href="#rules">Safety rules</a></li>
+      <li class="hide-sm"><a href="#api">API</a></li>
+      <li><a href="https://central.sonatype.com/artifact/io.transxact/transxact-kotlin">Maven Central</a></li>
+      <li><a href="https://github.com/transxactfj/transxact-kotlin">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero dark" id="top">
+  <svg viewBox="0 0 1152 478" class="motif" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M367 238.7L13.2 238.7L77.6 4.1L431.4 4.1Z"/><path d="M720.8 238.7L785.2 4.1L1139 4.1L1074.6 238.7Z"/><path d="M367 238.7L720.8 238.7L656.4 473.3L302.6 473.3Z"/></svg>
+  <div class="wrap">
+    <span class="tag"><span>KOTLIN SDK</span></span>
+    <h1>Payments made <span class="hl">easy.</span><br>On your Kotlin server.</h1>
+    <p class="lead">Take M&#8209;PAiSA and MyCash payments in FJD with Transxact hosted Checkout Sessions. Create a session, send the Customer to its hosted page, and fulfil from a verified webhook.</p>
+    <div class="cta">
+      <a class="btn" href="#quickstart"><span>Get started</span></a>
+      <a class="btn ghost" href="https://github.com/transxactfj/transxact-kotlin"><span>View on GitHub</span></a>
+    </div>
+    <div class="install">
+      <code id="install-cmd">implementation("io.transxact:transxact-kotlin:0.1.0")</code>
+      <button class="copy" type="button" data-copy-from="install-cmd">Copy</button>
+    </div>
+  </div>
+</header>
+
+<section id="how">
+  <div class="wrap">
+    <div class="eyebrow">01 — How it works</div>
+    <h2>Server-side, with your secret key.</h2>
+    <p class="sub">This is a JVM library for your Merchant backend (Java 11 or later). It holds your <code>sk_</code> key, so it never belongs in an Android app. Mobile apps ask your backend, which uses this SDK.</p>
+    <div class="grid3">
+      <div class="card"><div class="n">CREATE</div><h3>Start a Checkout Session</h3><p>Call <code>checkoutSessions.create</code> with the amount in FJD cents and an idempotency key derived from your order.</p></div>
+      <div class="card"><div class="n">REDIRECT</div><h3>Send the Customer</h3><p>Redirect them to the returned <code>hostedUrl</code>. They pick M&#8209;PAiSA or MyCash and confirm on their phone.</p></div>
+      <div class="card"><div class="n">FULFIL</div><h3>Trust the webhook</h3><p>Verify the <code>Transxact-Signature</code> header, then fulfil on <code>checkout_session.succeeded</code>. The redirect is only a hint.</p></div>
+    </div>
+    <div class="flow-wrap" style="margin-top:34px" aria-label="Payment flow">
+      <div class="flow">
+        <div><b>1 · Your server</b>Creates the session with your key</div>
+        <div><b>2 · Customer</b>Pays on the hosted page</div>
+        <div><b>3 · Transxact</b>Sends a signed webhook</div>
+        <div><b>4 · Your server</b>Verifies it and fulfils</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="quickstart">
+  <div class="wrap">
+    <div class="eyebrow">02 — Quickstart</div>
+    <h2>Four pieces of code.</h2>
+    <p class="sub">Add the dependency, create a session, verify webhooks, and handle errors. Every call is a <code>suspend</code> function.</p>
+    <div class="steps">
+      <div class="step">
+        <div><h3>1 · Install</h3><p>Add the library from Maven Central. It brings OkHttp and kotlinx.serialization with it.</p><p>Use a <code>sk_test_</code> key while you build: Test mode simulates payments and moves no money.</p></div>
+<pre><code class="language-kotlin">// build.gradle.kts
+dependencies {
+    implementation("io.transxact:transxact-kotlin:0.1.0")
+}</code></pre>
+      </div>
+      <div class="step">
+        <div><h3>2 · Create a session</h3><p>Amounts are FJD cents and must be under FJD 5,000.00. Send <code>amount</code> with <code>currency</code>, or a <code>quote</code>, never both.</p><p>The same <code>idempotencyKey</code> returns the original session, so a retry never charges twice. Without one, a random UUID is used.</p></div>
+<pre><code class="language-kotlin">val transxact = Transxact(System.getenv("TRANSXACT_SECRET_KEY"))
+
+val session = transxact.checkoutSessions.create(
+    CreateCheckoutSessionParams(
+        amount = 5000, // FJD 50.00
+        currency = "FJD",
+        successUrl = "https://shop.example/return",
+        cancelUrl = "https://shop.example/return",
+        metadata = mapOf("orderId" to "9912"),
+    ),
+    idempotencyKey = "order-9912",
+)
+// Redirect the Customer to session.hostedUrl</code></pre>
+      </div>
+      <div class="step">
+        <div><h3>3 · Verify webhooks</h3><p>Pass the raw request body, exactly as received, not re-serialized JSON. Signatures older than 5 minutes are rejected.</p><p>Delivery is at least once, so record the <code>id</code>s you have handled and skip repeats. Your signing secret is in the dashboard’s Webhooks section.</p></div>
+<pre><code class="language-kotlin">// Ktor shown; any framework works if you read the raw body.
+post("/webhooks/transxact") {
+    val raw = call.receiveText()
+    val ok = Webhooks.verifySignature(
+        raw,
+        call.request.header("Transxact-Signature") ?: "",
+        System.getenv("TRANSXACT_WEBHOOK_SECRET"),
+    )
+    if (!ok) return@post call.respond(HttpStatusCode.BadRequest)
+
+    val event = Webhooks.parseEvent(raw)
+    if (event.type == "checkout_session.succeeded") {
+        val session = event.checkoutSession() // fulfil once per event.id
+    }
+    call.respond(HttpStatusCode.OK)
+}</code></pre>
+      </div>
+      <div class="step">
+        <div><h3>4 · Handle errors</h3><p>A non-2xx response throws <code>TransxactApiException</code>. Branch on <code>code</code>; the message is for logs.</p><p>If the request never got an answer, you get <code>TransxactConnectionException</code>. Retries are automatic, see below.</p></div>
+<pre><code class="language-kotlin">try {
+    transxact.checkoutSessions.retrieve("cs_…")
+} catch (e: TransxactApiException) {
+    println("${e.statusCode} ${e.code}")
+} catch (e: TransxactConnectionException) {
+    // offline, DNS, TLS, timeout
+}</code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="rules">
+  <div class="wrap">
+    <div class="eyebrow">03 — Safety rules</div>
+    <h2>Built so the unsafe thing is hard to do.</h2>
+    <p class="sub">These behaviours are part of the SDK’s design and are covered by its tests.</p>
+    <div class="rules">
+      <div class="rule"><i></i><div><h3>Server-side only</h3><p>The client takes your <code>sk_</code> key. Keep it in your server’s environment or secret store, never in a mobile app or the repository.</p></div></div>
+      <div class="rule"><i></i><div><h3>Verified webhooks</h3><p><code>Webhooks.verifySignature</code> checks HMAC-SHA256 over <code>timestamp.payload</code> with a constant-time compare and a 5-minute window.</p></div></div>
+      <div class="rule"><i></i><div><h3>Idempotent creates</h3><p>Creating a session or invoice, and sending or voiding an invoice, always carry an <code>Idempotency-Key</code>. A retry replays the original.</p></div></div>
+      <div class="rule"><i></i><div><h3>Safe retries</h3><p>Timeouts, network failures and HTTP 408, 429 and 5xx are retried with backoff (default 2 retries), honouring <code>Retry-After</code>.</p></div></div>
+      <div class="rule"><i></i><div><h3>Forward compatible</h3><p>Statuses are plain strings and unknown fields are ignored, so a new status or field from the API never breaks an older SDK.</p></div></div>
+      <div class="rule"><i></i><div><h3>Don’t fulfil on the redirect</h3><p>The Customer’s return is a hint, not proof. Fulfil from the webhook, or confirm with <code>checkoutSessions.retrieve</code>.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="api">
+  <div class="wrap">
+    <div class="eyebrow">04 — API</div>
+    <h2>One client, four resources.</h2>
+    <p class="sub">Create <code>Transxact</code> once and share it. Money is always FJD cents (<code>Long</code>).</p>
+    <div class="api">
+      <div class="card wide">
+        <h3>Transxact</h3>
+        <p>The client. All resource calls hang off it.</p>
+        <table>
+          <tr><th>Parameter</th><th>What it does</th></tr>
+          <tr><td><code>apiKey</code></td><td>Your <code>sk_test_…</code> or <code>sk_live_…</code> key. The key picks Test or Live mode</td></tr>
+          <tr><td><code>baseUrl</code></td><td>Defaults to <code>https://api.transxact.io</code></td></tr>
+          <tr><td><code>maxRetries</code></td><td>Retries of a transient failure (default 2)</td></tr>
+          <tr><td><code>http</code></td><td>Your own <code>OkHttpClient</code>, for timeouts, proxies or logging</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3>checkoutSessions</h3>
+        <p>Collect one payment.</p>
+        <table>
+          <tr><th>Method</th><th></th></tr>
+          <tr><td><code>create(params, idempotencyKey)</code></td><td>Start a payment</td></tr>
+          <tr><td><code>retrieve(id)</code></td><td>Fetch one</td></tr>
+          <tr><td><code>list(limit, cursor, status, from, to)</code></td><td>Newest first; pass <code>nextCursor</code> as <code>cursor</code></td></tr>
+          <tr><td><code>cancel(id)</code></td><td>Cancel a pending session</td></tr>
+        </table>
+        <div class="states"><span class="pill warn">pending</span>→<span class="pill ok">succeeded</span><span class="pill bad">failed</span><span class="pill">cancelled</span></div>
+      </div>
+      <div class="card">
+        <h3>invoices</h3>
+        <p>Request payment with line items and a due date.</p>
+        <table>
+          <tr><th>Method</th><th></th></tr>
+          <tr><td><code>create(params, idempotencyKey)</code></td><td>Create a draft</td></tr>
+          <tr><td><code>send(id)</code> / <code>void(id)</code></td><td>Send to the Customer, or void</td></tr>
+          <tr><td><code>retrieve(id)</code> / <code>list(limit, startingAfter)</code></td><td>Fetch or page</td></tr>
+          <tr><td><code>retrievePdf(id)</code></td><td>The PDF as bytes</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3>merchants &amp; payouts</h3>
+        <p>Read-only account and settlement info.</p>
+        <table>
+          <tr><th>Method</th><th></th></tr>
+          <tr><td><code>merchants.me()</code></td><td>Tier, mode, balance, payout schedule</td></tr>
+          <tr><td><code>payouts.list(limit, startingAfter)</code></td><td>Your Payouts</td></tr>
+          <tr><td><code>payouts.retrieve(id)</code></td><td>One Payout</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Webhooks</h3>
+        <p>Hand-written helpers for incoming events.</p>
+        <table>
+          <tr><th>Function</th><th></th></tr>
+          <tr><td><code>verifySignature(raw, header, secret)</code></td><td>True only for a genuine, recent webhook</td></tr>
+          <tr><td><code>parseEvent(raw)</code></td><td>An <code>id</code>, <code>type</code> and <code>checkoutSession()</code>. Call after verifying</td></tr>
+        </table>
+      </div>
+      <div class="card wide">
+        <h3>Exceptions</h3>
+        <p>Branch on the type and on <code>code</code>, never on the message.</p>
+        <table>
+          <tr><th>Type</th><th>When</th></tr>
+          <tr><td><code>TransxactApiException</code></td><td>A 4xx or 5xx response. <code>statusCode</code>, <code>code</code> and the raw <code>body</code> are set</td></tr>
+          <tr><td><code>TransxactConnectionException</code></td><td>No response at all: offline, DNS, TLS or timeout, after retries ran out</td></tr>
+        </table>
+      </div>
+    </div>
+    <p class="more">The full REST reference is at <a href="https://docs.transxact.io/api-reference">docs.transxact.io</a>, and the <a href="https://github.com/transxactfj/transxact-kotlin#readme">README</a> covers the rest.</p>
+  </div>
+</section>
+
+<section id="test-mode">
+  <div class="wrap">
+    <div class="eyebrow">05 — Try it</div>
+    <h2>Run it against Test mode.</h2>
+    <p class="sub">Use an <code>sk_test_</code> key: sessions are simulated and no money moves. The repo’s smoke test creates, retrieves, lists and cancels a real Test mode session, and is skipped when no key is set.</p>
+<pre style="margin-bottom:34px"><code class="language-bash">TRANSXACT_SECRET_KEY="sk_test_…" ./gradlew test --tests "*SmokeTest*" -i</code></pre>
+    <div class="cta" style="margin-top:0">
+      <a class="btn" href="https://github.com/transxactfj/transxact-kotlin"><span>View the source</span></a>
+      <a class="btn" style="background:var(--stone-950);color:var(--lime)" href="https://central.sonatype.com/artifact/io.transxact/transxact-kotlin"><span>Maven Central</span></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <img src="assets/logo-reverse.svg" alt="Transxact">
+      <p>Payments made easy.</p>
+    </div>
+    <ul>
+      <li><a href="https://transxact.io">transxact.io</a></li>
+      <li><a href="https://github.com/transxactfj/transxact-kotlin">GitHub</a></li>
+      <li><a href="https://central.sonatype.com/artifact/io.transxact/transxact-kotlin">Maven Central</a></li>
+      <li><a href="https://docs.transxact.io/api-reference">API reference</a></li>
+      <li><a href="https://github.com/transxactfj/transxact-kotlin/blob/main/LICENSE">Apache-2.0</a></li>
+    </ul>
+    <p class="legal">transxact-kotlin is server-side. Keep your secret key out of client apps.</p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-clike.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-kotlin.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script>
+for (const button of document.querySelectorAll(".copy")) {
+    button.addEventListener("click", async () => {
+        const text = document.getElementById(button.dataset.copyFrom).textContent;
+        try {
+            await navigator.clipboard.writeText(text);
+            button.textContent = "Copied";
+        } catch {
+            button.textContent = "Press Ctrl+C";
+        }
+        setTimeout(() => (button.textContent = "Copy"), 1600);
+    });
+}
+</script>
+</body>
+</html>
