@@ -13,6 +13,11 @@ import kotlin.math.abs
 public object Webhooks {
     public const val DEFAULT_TOLERANCE_MS: Long = 5 * 60 * 1000
 
+    /** Parses a webhook body. Call this only after [verifySignature] returned true. */
+    @JvmStatic
+    public fun parseEvent(rawPayload: String): WebhookEvent =
+        webhookJson.decodeFromString(WebhookEvent.serializer(), rawPayload)
+
     @JvmStatic
     @JvmOverloads
     public fun verifySignature(

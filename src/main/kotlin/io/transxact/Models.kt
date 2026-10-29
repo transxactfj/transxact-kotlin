@@ -1,5 +1,6 @@
 package io.transxact
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
@@ -115,10 +116,22 @@ public data class Payout(
 @Serializable
 public data class PayoutList(val data: List<Payout>, val hasMore: Boolean)
 
-/** Webhook payload. [data] is left raw; decode it for the event types you handle. */
 @Serializable
-public data class WebhookEvent(
-    val id: String,
-    val type: String,
-    val data: JsonElement? = null,
-)
+public data class WebhookEventData(@SerialName("object") val obj: JsonElement)
+
+/**
+ * Webhook payload: `{ id: "evt_…", type: "checkout_session.succeeded", data: { object: … } }`.
+ * Delivery is at least once, so skip [id]s you've already handled. Parse with [Webhooks.parseEvent].
+ */
+@Serializable
+public data class WebhookEvent(val id: String, val type: String, val data: WebhookEventData? = null) {
+    /** The Checkout Session for `checkout_session.*` events, else null. */
+    public fun checkoutSession(): CheckoutSession? =
+        if (type.startsWith("checkout_session.")) {
+            data?.let { webhookJson.decodeFromJsonElement(CheckoutSession.serializer(), it.obj) }
+        } else {
+            null
+        }
+}
+
+internal val webhookJson = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; explicitNulls = false }

@@ -60,6 +60,16 @@ class TransxactTest {
     }
 
     @Test
+    fun parsesCheckoutSessionEvent() {
+        val raw = """{"id":"evt_1","type":"checkout_session.succeeded","data":{"object":$sessionJson}}"""
+        val event = Webhooks.parseEvent(raw)
+        assertEquals("evt_1", event.id)
+        assertEquals(CheckoutSessionStatus.PENDING, event.checkoutSession()?.status)
+        val test = Webhooks.parseEvent("""{"id":"evt_2","type":"webhook.test","data":{"object":{"sentAt":1}}}""")
+        assertEquals(null, test.checkoutSession())
+    }
+
+    @Test
     fun webhookVerification() {
         val now = System.currentTimeMillis()
         val body = """{"id":"evt_1"}"""
