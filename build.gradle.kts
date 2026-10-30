@@ -33,6 +33,14 @@ dependencies {
 
 tasks.test { useJUnitPlatform() }
 
+// Single source for the version sent in the User-Agent header.
+val sdkVersion = version.toString()
+tasks.processResources {
+    val v = sdkVersion
+    inputs.property("sdkVersion", v)
+    filesMatching("transxact-sdk.properties") { expand("version" to v) }
+}
+
 // Publishing to Maven Central (Sonatype Central Portal). Credentials and the signing key come from
 // ~/.gradle/gradle.properties or ORG_GRADLE_PROJECT_* env vars, never from this repo.
 mavenPublishing {

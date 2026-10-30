@@ -23,10 +23,10 @@ public class CheckoutSessionsApi internal constructor(private val c: Transxact) 
     )
 
     public suspend fun retrieve(id: String): CheckoutSession =
-        c.send("GET", "/v1/checkout-sessions/$id", CheckoutSession.serializer())
+        c.send("GET", "/v1/checkout-sessions/${pathSegment(id)}", CheckoutSession.serializer())
 
     public suspend fun cancel(id: String): CheckoutSession =
-        c.send("POST", "/v1/checkout-sessions/$id/cancel", CheckoutSession.serializer())
+        c.send("POST", "/v1/checkout-sessions/${pathSegment(id)}/cancel", CheckoutSession.serializer())
 }
 
 public class InvoicesApi internal constructor(private val c: Transxact) {
@@ -39,15 +39,15 @@ public class InvoicesApi internal constructor(private val c: Transxact) {
     public suspend fun list(limit: Int? = null, startingAfter: Long? = null): InvoiceList =
         c.send("GET", "/v1/invoices", InvoiceList.serializer(), query = mapOf("limit" to limit, "starting_after" to startingAfter))
 
-    public suspend fun retrieve(id: Long): Invoice = c.send("GET", "/v1/invoices/$id", Invoice.serializer())
+    public suspend fun retrieve(id: Long): Invoice = c.send("GET", "/v1/invoices/${pathSegment(id)}", Invoice.serializer())
 
     public suspend fun send(id: Long, idempotencyKey: String = c.newKey()): Invoice =
-        c.send("POST", "/v1/invoices/$id/send", Invoice.serializer(), idempotencyKey = idempotencyKey)
+        c.send("POST", "/v1/invoices/${pathSegment(id)}/send", Invoice.serializer(), idempotencyKey = idempotencyKey)
 
     public suspend fun void(id: Long, idempotencyKey: String = c.newKey()): Invoice =
-        c.send("POST", "/v1/invoices/$id/void", Invoice.serializer(), idempotencyKey = idempotencyKey)
+        c.send("POST", "/v1/invoices/${pathSegment(id)}/void", Invoice.serializer(), idempotencyKey = idempotencyKey)
 
-    public suspend fun retrievePdf(id: Long): ByteArray = c.sendForBytes("GET", "/v1/invoices/$id/pdf")
+    public suspend fun retrievePdf(id: Long): ByteArray = c.sendForBytes("GET", "/v1/invoices/${pathSegment(id)}/pdf")
 }
 
 public class MerchantsApi internal constructor(private val c: Transxact) {
@@ -58,5 +58,5 @@ public class PayoutsApi internal constructor(private val c: Transxact) {
     public suspend fun list(limit: Int? = null, startingAfter: String? = null): PayoutList =
         c.send("GET", "/v1/payouts", PayoutList.serializer(), query = mapOf("limit" to limit, "starting_after" to startingAfter))
 
-    public suspend fun retrieve(id: String): Payout = c.send("GET", "/v1/payouts/$id", Payout.serializer())
+    public suspend fun retrieve(id: String): Payout = c.send("GET", "/v1/payouts/${pathSegment(id)}", Payout.serializer())
 }

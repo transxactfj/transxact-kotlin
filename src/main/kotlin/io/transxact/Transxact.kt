@@ -6,13 +6,17 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+import java.net.URLEncoder
+import java.util.Properties
 import java.util.UUID
+import kotlin.random.Random
 
 public const val PRODUCTION_URL: String = "https://api.transxact.io"
 
@@ -30,6 +34,10 @@ public class Transxact(
 
     init {
         require(apiKey.isNotBlank()) { "apiKey is required" }
+        val base = requireNotNull(baseUrl.toHttpUrlOrNull()) { "baseUrl is not a valid URL" }
+        require(base.isHttps || isLoopback(base.host)) {
+            "baseUrl must use https; plain http is only allowed for localhost, so the API key is never sent in cleartext"
+        }
         authHeader = "Bearer $apiKey"
     }
 
@@ -79,20 +87,23 @@ public class Transxact(
             .apply { idempotencyKey?.let { header("Idempotency-Key", it) } }
             .build()
 
+        // A request that may have been processed is only replayed when doing so is harmless.
+        val replaySafe = method == "GET" || idempotencyKey != null
+
         var attempt = 0
         while (true) {
             try {
                 http.newCall(request).execute().use { response ->
                     val bytes = response.body?.bytes() ?: ByteArray(0)
                     if (response.isSuccessful) return@withContext bytes
-                    if (attempt < maxRetries && isRetryable(response.code)) {
+                    if (attempt < maxRetries && isRetryable(response.code, replaySafe)) {
                         delay(retryDelayMs(response.header("Retry-After"), attempt++))
                         return@use
                     }
                     throw toApiException(response.code, bytes.decodeToString())
                 }
             } catch (e: IOException) {
-                if (attempt >= maxRetries) throw TransxactConnectionException(e)
+                if (!replaySafe || attempt >= maxRetries) throw TransxactConnectionException(e)
                 delay(retryDelayMs(null, attempt++))
             }
         }
@@ -100,19 +111,35 @@ public class Transxact(
         error("unreachable")
     }
 
-    private fun isRetryable(code: Int) = code == 408 || code == 429 || code >= 500
+    // 429 means the request was rejected unprocessed, so it is always safe to retry.
+    private fun isRetryable(code: Int, replaySafe: Boolean) =
+        code == 429 || (replaySafe && (code == 408 || code >= 500))
 
     private fun retryDelayMs(retryAfter: String?, attempt: Int): Long {
         retryAfter?.toLongOrNull()?.takeIf { it > 0 }?.let { return minOf(it * 1000, 60_000) }
-        return minOf(1000L shl attempt, 60_000)
+        val backoff = minOf(1000L shl attempt, 60_000)
+        return (backoff * (0.5 + Random.nextDouble() * 0.5)).toLong()
     }
 
     private fun toApiException(status: Int, raw: String): TransxactApiException {
         val parsed = runCatching { json.decodeFromString(ErrorEnvelope.serializer(), raw) }.getOrNull()
-        return TransxactApiException(status, parsed?.error?.code, parsed?.error?.message ?: raw.ifBlank { "empty response" }, raw)
+        // An unparseable body stays on `body` but is kept out of the message, which tends to end up in logs.
+        val message = parsed?.error?.message ?: if (raw.isBlank()) "empty response" else "unexpected response body"
+        return TransxactApiException(status, parsed?.error?.code, message, raw)
     }
 
     private companion object {
-        const val SDK_VERSION = "0.1.0"
+        val SDK_VERSION: String = Transxact::class.java.getResourceAsStream("/transxact-sdk.properties")
+            ?.use { Properties().apply { load(it) }.getProperty("version") } ?: "unknown"
     }
+}
+
+private fun isLoopback(host: String): Boolean =
+    host == "localhost" || host.endsWith(".localhost") || host == "127.0.0.1" || host == "::1" || host == "[::1]"
+
+/** Percent-encodes a caller-supplied id so it can only ever be one path segment. */
+internal fun pathSegment(id: Any): String {
+    val s = id.toString()
+    require(s.isNotBlank() && s != "." && s != "..") { "invalid id" }
+    return URLEncoder.encode(s, Charsets.UTF_8.name()).replace("+", "%20")
 }

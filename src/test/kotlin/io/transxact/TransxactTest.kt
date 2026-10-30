@@ -19,7 +19,7 @@ class TransxactTest {
     fun createSendsAuthIdempotencyAndBody() = runTest {
         MockWebServer().use { server ->
             server.enqueue(MockResponse().setResponseCode(201).setBody(sessionJson))
-            val client = Transxact("sk_test_x", baseUrl = server.url("/").toString())
+            val client = Transxact("sk_test_x", baseUrl = "http://localhost:${server.port}/")
             val s = client.checkoutSessions.create(
                 CreateCheckoutSessionParams(amount = 5000, currency = "FJD", metadata = mapOf("orderId" to "9912")),
                 idempotencyKey = "k1",
@@ -36,7 +36,7 @@ class TransxactTest {
     fun errorEnvelopeBecomesException() = runTest {
         MockWebServer().use { server ->
             server.enqueue(MockResponse().setResponseCode(401).setBody("""{"error":{"code":"unauthorized","message":"Invalid API key"}}"""))
-            val client = Transxact("sk_test_x", baseUrl = server.url("/").toString())
+            val client = Transxact("sk_test_x", baseUrl = "http://localhost:${server.port}/")
             val e = assertFailsWith<TransxactApiException> { client.merchants.me() }
             assertEquals(401, e.statusCode)
             assertEquals("unauthorized", e.code)
@@ -48,7 +48,7 @@ class TransxactTest {
         MockWebServer().use { server ->
             server.enqueue(MockResponse().setResponseCode(503).setHeader("Retry-After", "1"))
             server.enqueue(MockResponse().setResponseCode(200).setBody(sessionJson))
-            val client = Transxact("sk_test_x", baseUrl = server.url("/").toString())
+            val client = Transxact("sk_test_x", baseUrl = "http://localhost:${server.port}/")
             assertEquals("cs_1", client.checkoutSessions.retrieve("cs_1").id)
             assertEquals(2, server.requestCount)
         }

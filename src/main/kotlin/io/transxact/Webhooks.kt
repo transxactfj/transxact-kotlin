@@ -27,12 +27,15 @@ public object Webhooks {
         toleranceMs: Long = DEFAULT_TOLERANCE_MS,
         nowMs: Long = System.currentTimeMillis(),
     ): Boolean {
+        if (secret.isEmpty()) return false
         val parts = header.split(",").mapNotNull {
             val i = it.indexOf('=')
             if (i < 0) null else it.substring(0, i).trim() to it.substring(i + 1).trim()
-        }.toMap()
-        val timestamp = parts["t"] ?: return false
-        val signature = parts["v1"] ?: return false
+        }
+        val timestamp = parts.firstOrNull { it.first == "t" }?.second ?: return false
+        // During secret rotation the header carries one v1 per active secret; any match is valid.
+        val signatures = parts.filter { it.first == "v1" }.map { it.second }
+        if (signatures.isEmpty()) return false
         val ts = timestamp.toLongOrNull() ?: return false
         if (abs(nowMs - ts) > toleranceMs) return false
 
@@ -41,6 +44,8 @@ public object Webhooks {
         }
         val expected = mac.doFinal("$timestamp.$rawPayload".toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it) }
-        return MessageDigest.isEqual(signature.toByteArray(), expected.toByteArray())
+            .toByteArray()
+        // No short-circuit: every candidate is compared so timing doesn't reveal which one matched.
+        return signatures.fold(false) { ok, sig -> MessageDigest.isEqual(sig.toByteArray(), expected) or ok }
     }
 }
